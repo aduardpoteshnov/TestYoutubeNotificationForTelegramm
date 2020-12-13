@@ -1,1 +1,1 @@
-web: java -jar target/IshtvarYtBot-0.0.1-jar-with-dependencies.jar
+web: java -jar target/IshtvarYtBot-0.0.1-jar-with-dependencies.jar $PORT
