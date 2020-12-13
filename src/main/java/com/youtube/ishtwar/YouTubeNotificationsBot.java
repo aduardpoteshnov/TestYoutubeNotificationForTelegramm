@@ -13,9 +13,9 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     List<Long> spamChatList = BotDb.getInstance().getChatsToSpam();
     YouTubeListener youTubeListener;
 
-    private void youTubeListenerStart(int port) {
+    public void youTubeListenerStart(int port) {
         try {
-            youTubeListener = new YouTubeListener(5000);
+            youTubeListener = new YouTubeListener(port);
             youTubeListener.setObserver(this);
         } catch (IOException e) {
             e.printStackTrace();

@@ -13,10 +13,13 @@ public class App {
         //Db and youtube listener will be initialize in Bot class
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
+        YouTubeNotificationsBot bot;
+        System.out.println("PORT is: " + args[0]);
 
         try {
-            botsApi.registerBot(new YouTubeNotificationsBot());
+            botsApi.registerBot(bot = new YouTubeNotificationsBot());
             System.out.println("Bot registration completed");
+            bot.youTubeListenerStart(Integer.parseInt(args[0]));
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
