@@ -7,8 +7,8 @@ public class HerokuCheat extends Thread {
     private YouTubeNotificationsBot bot;
     private final long chatToSpamStatusMessages = -1001159168691L;
     private int spamCounter = 1;
+    String spamMessage;
     private final String startDate = LocalDate.now().toString();
-    private final String spamMessage = "I'm alive and spam to you " + spamCounter + " times. I have spammed since " + startDate;
 
     public void setBot(YouTubeNotificationsBot bot) {
         this.bot = bot;
@@ -17,6 +17,7 @@ public class HerokuCheat extends Thread {
     @Override
     public void run() {
         do {
+            spamMessage = "I'm alive and spam to you " + spamCounter + " times. I have spammed since " + startDate;
             bot.cheatMessage(spamMessage, chatToSpamStatusMessages);
             spamCounter++;
             try {
