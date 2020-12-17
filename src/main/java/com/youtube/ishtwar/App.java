@@ -8,18 +8,19 @@ import java.io.IOException;
 
 
 public class App {
+    public static String httpPort;
     public static void main(String[] args) {
+        if(args.length > 0){
+            httpPort = args[0];
+            System.out.println("Received HTTP port is: " + args[0]);
+        }else System.out.println("HTTP port didn't receive, setup it by /setPort<PORT> command in telegramm interface");
         //Bot initialization and start
-        //Db and youtube listener will be initialize in Bot class
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
-        YouTubeNotificationsBot bot;
-        System.out.println("PORT is: " + args[0]);
 
         try {
-            botsApi.registerBot(bot = new YouTubeNotificationsBot());
+            botsApi.registerBot(new YouTubeNotificationsBot());
             System.out.println("Bot registration completed");
-            bot.youTubeListenerStart(Integer.parseInt(args[0]));
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

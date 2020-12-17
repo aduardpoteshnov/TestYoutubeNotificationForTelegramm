@@ -9,15 +9,28 @@ import java.io.IOException;
 import java.util.List;
 
 public class YouTubeNotificationsBot extends TelegramLongPollingBot {
+    String botName = System.getenv("BOT_NAME");
+    String botToken = System.getenv("BOT_TOKEN");
+    String ownerId = System.getenv("ADMIN_IDS");
     List<Integer> adminsList = BotDb.getInstance().getBotAdmins();
     List<Long> spamChatList = BotDb.getInstance().getChatsToSpam();
     YouTubeListener youTubeListener;
+    HerokuCheat herokuCheat = new HerokuCheat();
+
+    {
+        if (App.httpPort != null) {
+            youTubeListenerStart(Integer.parseInt(App.httpPort));
+        }
+        herokuCheat.setBot(this);
+    } //If http port received from parameters YTlistener starts in the same time with bot initialization, in other case listener can be started by bot command /setPort<PORT>
+
+
 
     public void youTubeListenerStart(int port) {
         try {
             youTubeListener = new YouTubeListener(port);
             youTubeListener.setObserver(this);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -25,12 +38,12 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "IshtvarBot";
+        return botName;
     }
 
     @Override
     public String getBotToken() {
-        return "1499712264:AAHZiYm-S3ww8dZmFSMf8QWdSQ0DovCkYJY";
+        return botToken;
     }
 
     @Override
@@ -40,6 +53,12 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
 
             if (update.getMessage().getText().equals("/chatId")) {
                 String message = "This chatId is: " + "\"" + chatId + "\"";
+                sendMessage(chatId, message);
+            }
+
+            if (update.getMessage().getText().equals("/info")) {
+                String message = "This chatId is: " + "\"" + chatId + "\" \n" +
+                        "Your userId is: " + "\"" + update.getMessage().getFrom().getId() + "\"";
                 sendMessage(chatId, message);
             }
 
@@ -71,11 +90,21 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                     }
                 }
             }
-            if (update.getMessage().getText().contains("/setPort")){
-                if(adminsList.contains(update.getMessage().getFrom().getId())){
+            if (update.getMessage().getText().contains("/setPort")) {
+                if (adminsList.contains(update.getMessage().getFrom().getId())) {
                     int port = Integer.parseInt(update.getMessage().getText().substring(8));
                     youTubeListenerStart(port);
                     sendMessage(chatId, "Looks like everything is OK");
+                }
+            }
+            if (update.getMessage().getText().contains("/cheat")) {
+                if (adminsList.contains(update.getMessage().getFrom().getId())) {
+                    herokuCheat.start();
+                }
+            }
+            if (update.getMessage().getText().contains("/cheatStop")) {
+                if (adminsList.contains(update.getMessage().getFrom().getId())) {
+                    herokuCheat.interrupt();
                 }
             }
         }
@@ -99,4 +128,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
         }
     }
 
+    public void cheatMessage(String message, Long chatId){
+        sendMessage(chatId, message);
+    }
 }
