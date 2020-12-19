@@ -1,17 +1,16 @@
 package com.youtube.ishtwar;
 
+import com.youtube.ishtwar.db.BotDb;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.IOException;
 import java.util.List;
 
 public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     String botName = System.getenv("BOT_NAME");
     String botToken = System.getenv("BOT_TOKEN");
-    String ownerId = System.getenv("ADMIN_IDS");
     List<Integer> adminsList = BotDb.getInstance().getBotAdmins();
     List<Long> spamChatList = BotDb.getInstance().getChatsToSpam();
     YouTubeListener youTubeListener;
@@ -83,7 +82,10 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
             if (update.getMessage().getText().equals("/spam")) {
                 if (adminsList.contains(update.getMessage().getFrom().getId())) {
                     if (!spamChatList.contains(chatId)) {
-                        spamChatList.add(chatId);
+                        String chatName = update.getMessage().getChat().getTitle();
+                        if(BotDb.getInstance().addNewChatToSpamList(chatId, chatName)){
+                            spamChatList = BotDb.getInstance().getChatsToSpam();
+                        };
                         sendMessage(chatId, "Added to my spamlist");
                     } else {
                         sendMessage(chatId, "This chat is already in my spamlist");
