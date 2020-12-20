@@ -14,13 +14,11 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     List<Integer> adminsList = BotDb.getInstance().getBotAdmins();
     List<Long> spamChatList = BotDb.getInstance().getChatsToSpam();
     YouTubeListener youTubeListener;
-    HerokuCheat herokuCheat = new HerokuCheat();
 
     {
         if (App.httpPort != null) {
             youTubeListenerStart(Integer.parseInt(App.httpPort));
         }
-        herokuCheat.setBot(this);
     } //If http port received from parameters YTlistener starts in the same time with bot initialization, in other case listener can be started by bot command /setPort<PORT>
 
 
@@ -97,16 +95,6 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                     int port = Integer.parseInt(update.getMessage().getText().substring(8));
                     youTubeListenerStart(port);
                     sendMessage(chatId, "Looks like everything is OK");
-                }
-            }
-            if (update.getMessage().getText().contains("/cheat")) {
-                if (adminsList.contains(update.getMessage().getFrom().getId())) {
-                    herokuCheat.start();
-                }
-            }
-            if (update.getMessage().getText().contains("/cheatStop")) {
-                if (adminsList.contains(update.getMessage().getFrom().getId())) {
-                    herokuCheat.interrupt();
                 }
             }
         }

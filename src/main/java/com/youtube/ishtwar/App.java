@@ -1,5 +1,6 @@
 package com.youtube.ishtwar;
 
+import com.youtube.ishtwar.db.BotDb;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -14,12 +15,15 @@ public class App {
             httpPort = args[0];
             System.out.println("Received HTTP port is: " + args[0]);
         }else System.out.println("HTTP port didn't receive, setup it by /setPort<PORT> command in telegramm interface");
+        BotDb db = BotDb.getInstance();
+        System.out.println("DB_class Initialized");
         //Bot initialization and start
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
+        YouTubeNotificationsBot youtubeBot = new YouTubeNotificationsBot();
 
         try {
-            botsApi.registerBot(new YouTubeNotificationsBot());
+            botsApi.registerBot(youtubeBot);
             System.out.println("Bot registration completed");
         } catch (TelegramApiException e) {
             e.printStackTrace();

@@ -1,5 +1,7 @@
 package com.youtube.ishtwar.db;
 
+import com.youtube.ishtwar.YouTubeListener;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.*;
@@ -15,11 +17,15 @@ import java.util.List;
 public class BotDb {
     private static BotDb dataBase;
     private ArrayList<Integer> botAdmins;
-    private final ArrayList<Long> chatsToSpam;
+    private ArrayList<Long> chatsToSpam;
+    private List<String> ytChannelsList;
+
     private URI dbUri;
     private final String dbUser;
     private final String dbPwd;
     private final String dbUrl;
+
+    private YouTubeListener youTubeListener;
 
 
     private BotDb() {
@@ -34,11 +40,6 @@ public class BotDb {
         dbPwd = dbUri.getUserInfo().split(":")[1];
         dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
 
-        botAdmins = new ArrayList<>();
-        fillBotAdminsListFromDb();
-
-        chatsToSpam = new ArrayList<>();
-        fillChatToSpamListFromDb();
     }
 
     public static BotDb getInstance() {
@@ -55,14 +56,21 @@ public class BotDb {
     }
 
     public ArrayList<Integer> getBotAdmins() {
+        fillBotAdminsListFromDb();
         return botAdmins;
     }
 
     public List<Long> getChatsToSpam() {
+        fillChatToSpamListFromDb();
         return chatsToSpam;
     }
 
+    public List<String> getYtChannelsList() {
+        return ytChannelsList;
+    }
+
     private void fillBotAdminsListFromDb() {
+        botAdmins = new ArrayList<>();
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
@@ -86,6 +94,7 @@ public class BotDb {
     }
 
     private void fillChatToSpamListFromDb() {
+        chatsToSpam = new ArrayList<>();
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
@@ -119,7 +128,6 @@ public class BotDb {
             statement.setString(1, String.valueOf(chatId));
             statement.setString(2, chatName);
             result = statement.executeQuery().next();
-            if(result) fillChatToSpamListFromDb();
         }catch (SQLException e){
             System.out.println("fillBotAdminsListFromDb problem");
             e.printStackTrace();
@@ -133,5 +141,9 @@ public class BotDb {
             }
         }
         return result;
+    }
+
+    public void setObserved(YouTubeListener youTubeListener){
+        this.youTubeListener = youTubeListener;
     }
 }

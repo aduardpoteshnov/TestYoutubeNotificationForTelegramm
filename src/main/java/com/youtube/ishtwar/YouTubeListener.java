@@ -1,17 +1,11 @@
 package com.youtube.ishtwar;
 
-/*To implement
- * 1. HttpServer based on NanoHttpD
- * 2. Test Request parser
- * 3. Check/Restore subscribtion status*/
-
 import fi.iki.elonen.NanoHTTPD;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import java.io.IOException;
 import java.io.StringReader;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -44,6 +38,7 @@ public class YouTubeListener extends NanoHTTPD {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body);
                 for (Map.Entry entry : body.entrySet()) {
+                    System.out.println(entry.getValue().toString());
                     xmlParser(entry.getValue().toString());
                 }
                 return newFixedLengthResponse("OK");
@@ -61,30 +56,32 @@ public class YouTubeListener extends NanoHTTPD {
 
     private void xmlParser(String xml) { //Магия парсинга, в 2 захода парсим ATOM feed от ютуба
         NodeList nl = null;
+        Map<String, String> youtubeRequest = new HashMap<>();
+
         try {
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(new InputSource(new StringReader(xml)));
             XPathFactory xPathfactory = XPathFactory.newInstance();
             XPath xpath = xPathfactory.newXPath();
+
             //вытаскиваем грязный урл вида href="http://www.youtube.com/watch?v=VIDEO_ID"
-            XPathExpression expr = xpath.compile("//feed/entry/link/@href");
+            XPathExpression expr = xpath.compile("//feed/entry/yt:videoId");
             nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
 
             // Output NodeList
             for (int i = 0; i < nl.getLength(); i++) {
                 //приводим урл к конечному виду и записываем в переменную http://www.youtube.com/watch?v=VIDEO_ID
-                notifyObservers(nl.item(i).toString().substring(6, nl.item(i).toString().length() - 1));
+                System.out.println((nl.item(i).toString().substring(6, nl.item(i).toString().length() - 1)));
             }
-        } catch (XPathExpressionException e1) {
-            e1.printStackTrace();
-        } catch (ParserConfigurationException e1) {
-            e1.printStackTrace();
-        } catch (SAXException e1) {
-            e1.printStackTrace();
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (XPathExpressionException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
