@@ -1,9 +1,14 @@
 package com.youtube.ishtwar;
 
+import com.youtube.ishtwar.db.BotDb;
 import fi.iki.elonen.NanoHTTPD;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import java.io.StringReader;
@@ -11,19 +16,19 @@ import java.io.StringReader;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
+import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class YouTubeListener extends NanoHTTPD {
+
     private YouTubeNotificationsBot observer;
+    private List<String> alreadySentItems = BotDb.getInstance().getSentItemsList();
 
     public YouTubeListener(int port) throws IOException {
         super(port);
@@ -32,14 +37,13 @@ public class YouTubeListener extends NanoHTTPD {
     }
 
     @Override
-    public Response serve(IHTTPSession session) {
-        if (session.getMethod() == Method.POST) {
+    public Response serve(IHTTPSession session) {  //Ловим хттп реквест
+        if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
             try {
                 Map<String, String> body = new HashMap<>();
-                session.parseBody(body);
+                session.parseBody(body); //вытаскиваем бодик
                 for (Map.Entry entry : body.entrySet()) {
-                    System.out.println(entry.getValue().toString());
-                    xmlParser(entry.getValue().toString());
+                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу и прям бегом обрабатываем полученную мапу
                 }
                 return newFixedLengthResponse("OK");
             } catch (IOException | ResponseException e) {
@@ -54,28 +58,46 @@ public class YouTubeListener extends NanoHTTPD {
                 "ACCEPTED");
     }
 
-    private void xmlParser(String xml) { //Магия парсинга, в 2 захода парсим ATOM feed от ютуба
-        NodeList nl = null;
-        Map<String, String> youtubeRequest = new HashMap<>();
+    private HashMap<String, String> xmlParser(String xml) {
+        HashMap<String, String> youtubeRequest = new HashMap<>();
 
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(new InputSource(new StringReader(xml)));
-            XPathFactory xPathfactory = XPathFactory.newInstance();
-            XPath xpath = xPathfactory.newXPath();
+            DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            InputSource source = new InputSource();
+            source.setCharacterStream(new StringReader(xml));
 
-            //вытаскиваем грязный урл вида href="http://www.youtube.com/watch?v=VIDEO_ID"
-            XPathExpression expr = xpath.compile("//feed/entry/yt:videoId");
-            nl = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            Document doc = docBuilder.parse(source);
+            NodeList entry = doc.getElementsByTagName("entry");
+            NodeList author = doc.getElementsByTagName("author");
 
-            // Output NodeList
-            for (int i = 0; i < nl.getLength(); i++) {
-                //приводим урл к конечному виду и записываем в переменную http://www.youtube.com/watch?v=VIDEO_ID
-                System.out.println((nl.item(i).toString().substring(6, nl.item(i).toString().length() - 1)));
+            for (int i = 0; i < entry.getLength(); i++) {
+                Element element = (Element) entry.item(i);
+
+                NodeList ytvideoId = element.getElementsByTagName("yt:videoId");
+                Element line = (Element) ytvideoId.item(0);
+                youtubeRequest.put("videoId",  getCharacterDataFromElementXmlParserPart(line));
+
+                NodeList published = element.getElementsByTagName("published");
+                line = (Element) published.item(0);
+                youtubeRequest.put("published", getCharacterDataFromElementXmlParserPart(line));
+
+                NodeList updated = element.getElementsByTagName("updated");
+                line = (Element) updated.item(0);
+                youtubeRequest.put("updated",  getCharacterDataFromElementXmlParserPart(line));
             }
-        } catch (XPathExpressionException e) {
-            e.printStackTrace();
+
+            for (int i = 0; i < author.getLength(); i++) {
+                Element element = (Element) author.item(i);
+
+                NodeList authorName = element.getElementsByTagName("name");
+                Element line = (Element) authorName.item(0);
+                youtubeRequest.put("channelTitle", getCharacterDataFromElementXmlParserPart(line));
+
+                NodeList uri = element.getElementsByTagName("uri");
+                line = (Element) uri.item(0);
+                youtubeRequest.put("channelUri", getCharacterDataFromElementXmlParserPart(line));
+            }
+
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (SAXException e) {
@@ -83,13 +105,58 @@ public class YouTubeListener extends NanoHTTPD {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return youtubeRequest;
+    }
+
+    public static String getCharacterDataFromElementXmlParserPart(Element e) {
+        Node child = e.getFirstChild();
+        if (child instanceof CharacterData) {
+            CharacterData cd = (CharacterData) child;
+            return cd.getData();
+        }
+        return "";
+    }
+
+    private void handleNewlyReceivedVideo(HashMap<String, String> newVideo){
+        String videoId = newVideo.get("videoid");
+        String date = newVideo.get("updated");
+        if(alreadySentItems.contains(videoId)){
+            HashMap<String, String > oldItem = BotDb.getInstance().getSentItemByVid(videoId);
+            String oldDate = oldItem.get("updated");
+            if(isTimeBetweenUpdatesIsOK(date, oldDate)){
+                BotDb.getInstance().updateSentItems(newVideo);
+                observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+            }
+        }else {
+            BotDb.getInstance().addNewSentItem(newVideo);
+            alreadySentItems = BotDb.getInstance().getSentItemsList();
+            observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+        }
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
         this.observer = observer;
     }
 
-    private void notifyObservers(String urlToPost){
-        observer.newUpdateReceived(urlToPost);
+    private boolean isTimeBetweenUpdatesIsOK(String newDate, String oldDate){
+        long okTime = convertMinToMs(60);
+        return (parseDate(newDate) - parseDate(oldDate) >= okTime);
+    }
+
+    private Long parseDate(String dateToParse){
+        long dateToReturn = 578924129106L;
+        String dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+        try {
+            dateToReturn = sdf.parse(dateToParse).getTime();
+        } catch (ParseException e) {
+            System.out.println("ParseDate error");
+            e.printStackTrace();
+        }
+        return dateToReturn;
+    }
+
+    private Long convertMinToMs(int min){
+        return min + 60000L;
     }
 }

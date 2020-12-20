@@ -11,16 +11,15 @@ import java.util.List;
 public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     String botName = System.getenv("BOT_NAME");
     String botToken = System.getenv("BOT_TOKEN");
-    List<Integer> adminsList = BotDb.getInstance().getBotAdmins();
-    List<Long> spamChatList = BotDb.getInstance().getChatsToSpam();
+    List<Integer> adminsList = BotDb.getInstance().getBotAdminsList();
+    List<Long> spamChatList = BotDb.getInstance().getChatsToSpamList();
     YouTubeListener youTubeListener;
 
     {
         if (App.httpPort != null) {
             youTubeListenerStart(Integer.parseInt(App.httpPort));
-        }
-    } //If http port received from parameters YTlistener starts in the same time with bot initialization, in other case listener can be started by bot command /setPort<PORT>
-
+        }else System.out.println("httpPort is empty");
+    }
 
 
     public void youTubeListenerStart(int port) {
@@ -28,6 +27,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
             youTubeListener = new YouTubeListener(port);
             youTubeListener.setObserver(this);
         } catch (Exception e) {
+            System.out.println("youTubeListener doesn't start");
             e.printStackTrace();
         }
     }
@@ -81,9 +81,10 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 if (adminsList.contains(update.getMessage().getFrom().getId())) {
                     if (!spamChatList.contains(chatId)) {
                         String chatName = update.getMessage().getChat().getTitle();
-                        if(BotDb.getInstance().addNewChatToSpamList(chatId, chatName)){
-                            spamChatList = BotDb.getInstance().getChatsToSpam();
-                        };
+                        if (BotDb.getInstance().addNewChatToSpamList(chatId, chatName)) {
+                            spamChatList = BotDb.getInstance().getChatsToSpamList();
+                        }
+                        ;
                         sendMessage(chatId, "Added to my spamlist");
                     } else {
                         sendMessage(chatId, "This chat is already in my spamlist");
@@ -99,6 +100,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
             }
         }
     }
+
 
     void sendMessage(long chatId, String messageText) {
         SendMessage message = new SendMessage();
@@ -116,9 +118,5 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
         for (Long aLong : spamChatList) {
             sendMessage(aLong, urlToPost);
         }
-    }
-
-    public void cheatMessage(String message, Long chatId){
-        sendMessage(chatId, message);
     }
 }

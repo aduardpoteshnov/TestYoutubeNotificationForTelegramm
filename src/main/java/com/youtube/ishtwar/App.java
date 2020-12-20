@@ -15,8 +15,7 @@ public class App {
             httpPort = args[0];
             System.out.println("Received HTTP port is: " + args[0]);
         }else System.out.println("HTTP port didn't receive, setup it by /setPort<PORT> command in telegramm interface");
-        BotDb db = BotDb.getInstance();
-        System.out.println("DB_class Initialized");
+
         //Bot initialization and start
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
