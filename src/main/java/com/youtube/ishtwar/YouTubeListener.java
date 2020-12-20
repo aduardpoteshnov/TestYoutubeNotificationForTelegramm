@@ -28,11 +28,12 @@ import org.xml.sax.SAXException;
 public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
-    private List<String> alreadySentItems = BotDb.getInstance().getSentItemsList();
+    private List<String> alreadySentItems;
 
     public YouTubeListener(int port) throws IOException {
         super(port);
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+        alreadySentItems = BotDb.getInstance().getSentItemsList();
         System.out.println("\b NanoHTTPD Running!");
     }
 
@@ -118,7 +119,7 @@ public class YouTubeListener extends NanoHTTPD {
     }
 
     private void handleNewlyReceivedVideo(HashMap<String, String> newVideo){
-        String videoId = newVideo.get("videoid");
+        String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
         if(alreadySentItems.contains(videoId)){
             HashMap<String, String > oldItem = BotDb.getInstance().getSentItemByVid(videoId);

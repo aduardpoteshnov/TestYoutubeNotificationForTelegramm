@@ -175,7 +175,7 @@ public class BotDb {
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
             PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO sentItems (id, videoid, published, updated, chaneltitle, channeluri) " +
+                    "INSERT INTO sentItems (id, videoId, published, updated, channelTitle, channelUri) " +
                             "values (DEFAULT, (?), (?), (?), (?), (?)) RETURNING id");
             statement.setString(1, newSentItem.get("videoId"));
             statement.setString(2, newSentItem.get("published"));
@@ -202,7 +202,7 @@ public class BotDb {
         Connection connection = null;
         try{
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM sentitems WHERE videoid = (?)");
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM sentItems WHERE videoId = (?)");
             statement.setString(1, videoId);
             ResultSet result = statement.executeQuery();
             if (result.next()){

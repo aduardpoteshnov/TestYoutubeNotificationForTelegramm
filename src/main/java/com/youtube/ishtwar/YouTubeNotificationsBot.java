@@ -84,7 +84,6 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                         if (BotDb.getInstance().addNewChatToSpamList(chatId, chatName)) {
                             spamChatList = BotDb.getInstance().getChatsToSpamList();
                         }
-                        ;
                         sendMessage(chatId, "Added to my spamlist");
                     } else {
                         sendMessage(chatId, "This chat is already in my spamlist");
