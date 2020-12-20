@@ -34,6 +34,9 @@ public class YouTubeListener extends NanoHTTPD {
         super(port);
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         alreadySentItems = BotDb.getInstance().getSentItemsList();
+        for(int i = 0; i < alreadySentItems.size(); i++){
+            System.out.println(alreadySentItems.get(i));
+        }
         System.out.println("\b NanoHTTPD Running!");
     }
 
@@ -127,6 +130,10 @@ public class YouTubeListener extends NanoHTTPD {
             if(isTimeBetweenUpdatesIsOK(date, oldDate)){
                 BotDb.getInstance().updateSentItems(newVideo);
                 observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+            }else {
+                observer.newUpdateReceived("Service Message, \n " +
+                        "Interval between updates the same video is too short. \n" +
+                        "Interval value is 60min now");
             }
         }else {
             BotDb.getInstance().addNewSentItem(newVideo);
@@ -140,6 +147,8 @@ public class YouTubeListener extends NanoHTTPD {
     }
 
     private boolean isTimeBetweenUpdatesIsOK(String newDate, String oldDate){
+        System.out.println(newDate);
+        System.out.println(oldDate);
         long okTime = convertMinToMs(60);
         return (parseDate(newDate) - parseDate(oldDate) >= okTime);
     }
@@ -150,6 +159,7 @@ public class YouTubeListener extends NanoHTTPD {
         SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
         try {
             dateToReturn = sdf.parse(dateToParse).getTime();
+            System.out.println("parsedDate " + dateToReturn);
         } catch (ParseException e) {
             System.out.println("ParseDate error");
             e.printStackTrace();
@@ -158,6 +168,6 @@ public class YouTubeListener extends NanoHTTPD {
     }
 
     private Long convertMinToMs(int min){
-        return min + 60000L;
+        return min * 60000L;
     }
 }

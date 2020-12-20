@@ -235,7 +235,7 @@ public class BotDb {
                     "UPDATE sentItems SET updated = (?) WHERE videoId = (?)");
             statement.setString(1, newVideo.get("updated"));
             statement.setString(2, newVideo.get("videoId"));
-            statement.executeQuery();
+            statement.executeUpdate();
         }catch (SQLException e){
             System.out.println("updateSentItems problem");
             e.printStackTrace();
