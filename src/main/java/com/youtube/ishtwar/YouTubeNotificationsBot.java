@@ -63,7 +63,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 if (adminsList.contains(update.getMessage().getFrom().getId())) {
                     sendMessage(chatId, "I'm alive! \n" +
                             "For run youtubeUpdates listener enter /setPort<PORT> without_spaces \n" +
-                            "For start notification to some chat, add bot to chat and execute /spam command \n" +
+                            "For start notification to some chat, add bot to chat and execute /spam command (/nospam for stop it) \n" +
                             "Cause it early-test you should do previous steps every time after restart bot service on server \n" +
                             "For point youtube notification to your server instance do next \n" +
                             "1. Go to http://pubsubhubbub.appspot.com/subscribe \n" +
@@ -90,6 +90,21 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                     }
                 }
             }
+
+            if (update.getMessage().getText().equals("/nospam")) {
+                if (adminsList.contains(update.getMessage().getFrom().getId())) {
+                    if (!spamChatList.contains(chatId)) {
+                        String chatName = update.getMessage().getChat().getTitle();
+                        if (BotDb.getInstance().addNewChatToSpamList(chatId, chatName)) {
+                            spamChatList = BotDb.getInstance().getChatsToSpamList();
+                        }
+                        sendMessage(chatId, "Added to my spamlist");
+                    } else {
+                        sendMessage(chatId, "This chat is already in my spamlist");
+                    }
+                }
+            }
+
             if (update.getMessage().getText().contains("/setPort")) {
                 if (adminsList.contains(update.getMessage().getFrom().getId())) {
                     int port = Integer.parseInt(update.getMessage().getText().substring(8));

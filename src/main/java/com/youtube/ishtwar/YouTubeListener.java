@@ -47,7 +47,7 @@ public class YouTubeListener extends NanoHTTPD {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body); //вытаскиваем бодик
                 for (Map.Entry entry : body.entrySet()) {
-                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу и прям бегом обрабатываем полученную мапу
+                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу обрабатываем
                 }
                 return newFixedLengthResponse("OK");
             } catch (IOException | ResponseException e) {
@@ -55,11 +55,27 @@ public class YouTubeListener extends NanoHTTPD {
             }
         }
 
-        if (session.getMethod() == Method.GET) {
+        if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
+            long subStart = System.currentTimeMillis();
+            long expireTime = Long.parseLong(session.getParameters().get("hub.lease_seconds").get(0));
+            long subExpired = subStart + expireTime;
+            if (BotDb.getInstance().isSubscriptionExist("Ishtvar")){
+                BotDb.getInstance().updateSubscription
+                        ("Ishtvar",
+                                "https://www.youtube.com/channel/UCN4FNK7oAe2Bmaw7Oi5blog",
+                                subStart,
+                                subExpired);
+            }else {
+                BotDb.getInstance().addSubscription
+                        ("Ishtvar",
+                                "https://www.youtube.com/channel/UCN4FNK7oAe2Bmaw7Oi5blog",
+                                subStart,
+                                subExpired);
+            }
             return newFixedLengthResponse(session.getParameters().get("hub.challenge").get(0));
         }
-        return newFixedLengthResponse(Response.Status.ACCEPTED, MIME_PLAINTEXT,
-                "ACCEPTED");
+        return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT,
+                "Something went wrong, request not supported");
     }
 
     private HashMap<String, String> xmlParser(String xml) {
@@ -149,11 +165,11 @@ public class YouTubeListener extends NanoHTTPD {
     private boolean isTimeBetweenUpdatesIsOK(String newDate, String oldDate){
         System.out.println(newDate);
         System.out.println(oldDate);
-        long okTime = convertMinToMs(60);
+        long okTime = convertMinToMs(59);
         return (parseDate(newDate) - parseDate(oldDate) >= okTime);
     }
 
-    private Long parseDate(String dateToParse){
+    private long parseDate(String dateToParse){
         long dateToReturn = 578924129106L;
         String dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS";
         SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
@@ -167,7 +183,7 @@ public class YouTubeListener extends NanoHTTPD {
         return dateToReturn;
     }
 
-    private Long convertMinToMs(int min){
+    private long convertMinToMs(int min){
         return min * 60000L;
     }
 }
