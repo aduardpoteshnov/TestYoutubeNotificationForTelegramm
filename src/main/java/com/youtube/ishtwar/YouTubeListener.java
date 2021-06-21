@@ -38,6 +38,7 @@ public class YouTubeListener extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {  //Ловим хттп реквест
         if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
+            System.out.println("NEW POST RESEIVED");
             try {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body); //вытаскиваем бодик
