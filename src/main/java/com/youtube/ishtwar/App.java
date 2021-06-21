@@ -20,7 +20,5 @@ public class App {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-
-        new PubSubRegistration().testSubscribe();
     }
 }

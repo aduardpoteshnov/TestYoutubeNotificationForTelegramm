@@ -52,7 +52,7 @@ public class YouTubeListener extends NanoHTTPD {
         }
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
-            System.out.println("Gotta!!!");
+            System.out.println("Получен ГЕТ запрос");
             return newFixedLengthResponse(session.getParameters().get("hub.challenge").get(0));
         }
         return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT,
