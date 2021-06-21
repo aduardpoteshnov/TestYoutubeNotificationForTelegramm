@@ -1,14 +1,11 @@
 package com.youtube.ishtwar.db;
 
-import com.youtube.ishtwar.YouTubeListener;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 /*To implement
@@ -249,4 +246,76 @@ public class BotDb {
             }
         }
     }
+
+    public void addSubscription(String channelName, String channelUri, long startDate, long expireDate) {
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO subscriptions (id, channelName, channelUri, startDate, expireDate) " +
+                            "values (DEFAULT, (?), (?), (?), (?)) RETURNING id");
+            statement.setString(1, channelName);
+            statement.setString(2, channelUri);
+            statement.setString(3, String.valueOf(startDate));
+            statement.setString(4, String.valueOf(expireDate));
+        } catch (SQLException e) {
+            System.out.println("addSubscription problem");
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void updateSubscription(String channelName, String channelUri, long startDate, long expireDate) {
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
+            PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE subscriptions SET expireDate = (?) where channelName = (?)");
+            statement.setString(1, String.valueOf(expireDate));
+            statement.setString(2, channelName);
+        } catch (SQLException e) {
+            System.out.println("addSubscription problem");
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public boolean isSubscriptionExist(String channelName) {
+        Connection connection = null;
+        boolean result = false;
+        try {
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM subscriptions WHERE channelName = (?)");
+            statement.setString(1, channelName);
+            result = statement.executeQuery().next();
+        } catch (SQLException e) {
+            System.out.println("addSubscription problem");
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
+    }
+
+
 }
