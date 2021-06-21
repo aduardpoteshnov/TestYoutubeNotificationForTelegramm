@@ -274,7 +274,6 @@ public class BotDb {
 
     public void updateSubscription(String channelName, String channelUri, long startDate, long expireDate) {
         Connection connection = null;
-        boolean result = false;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
             PreparedStatement statement = connection.prepareStatement(

@@ -11,7 +11,6 @@ import java.util.List;
 public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     String botName = System.getenv("BOT_NAME");
     String botToken = System.getenv("BOT_TOKEN");
-    List<Integer> adminsList = BotDb.getInstance().getBotAdminsList();
     List<Long> spamChatList = BotDb.getInstance().getChatsToSpamList();
     YouTubeListener youTubeListener;
 
@@ -60,67 +59,49 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
             }
 
             if (update.getMessage().getText().equals("/start")) {
-                if (adminsList.contains(update.getMessage().getFrom().getId())) {
-                    sendMessage(chatId, "I'm alive! \n" +
-                            "For run youtubeUpdates listener enter /setPort<PORT> without_spaces \n" +
-                            "For start notification to some chat, add bot to chat and execute /spam command (/nospam for stop it) \n" +
-                            "Cause it early-test you should do previous steps every time after restart bot service on server \n" +
-                            "For point youtube notification to your server instance do next \n" +
-                            "1. Go to http://pubsubhubbub.appspot.com/subscribe \n" +
-                            "2. Enter address of your server to <Callback URL> field \n" +
-                            "3. Enter https://www.youtube.com/xml/feeds/videos.xml?channel_id=<YOUR CHANNEL ID> in Topic URL \n" +
-                            "4. Set <Asynchronous> Verify type and set Mode to <Subscribe> \n" +
-                            "5. Click Do It! \n\n" +
-                            "You will see white page, it's ok \n" +
-                            "Go back to http://pubsubhubbub.appspot.com/subscribe and fill diagnostics fields with previously used URLs \n" +
-                            "Check <State> row on Subscription Details page, it should be <Verified> \n" +
-                            "If you faced some problems contact https://t.me/EduardPoteshnov  @EduardPoteshnove");
-                }
+                sendMessage(chatId, "I'm alive! \n" +
+                        "For run youtubeUpdates listener enter /setPort<PORT> without_spaces \n" +
+                        "For start notification to some chat, add bot to chat and execute /spam command (/nospam for stop it) \n" +
+                        "Cause it early-test you should do previous steps every time after restart bot service on server \n" +
+                        "For point youtube notification to your server instance do next \n" +
+                        "1. Go to http://pubsubhubbub.appspot.com/subscribe \n" +
+                        "2. Enter address of your server to <Callback URL> field \n" +
+                        "3. Enter https://www.youtube.com/xml/feeds/videos.xml?channel_id=<YOUR CHANNEL ID> in Topic URL \n" +
+                        "4. Set <Asynchronous> Verify type and set Mode to <Subscribe> \n" +
+                        "5. Click Do It! \n\n" +
+                        "You will see white page, it's ok \n" +
+                        "Go back to http://pubsubhubbub.appspot.com/subscribe and fill diagnostics fields with previously used URLs \n" +
+                        "Check <State> row on Subscription Details page, it should be <Verified> \n" +
+                        "If you faced some problems contact https://t.me/EduardPoteshnov  @EduardPoteshnove");
             }
             if (update.getMessage().getText().equals("/spam")) {
-                if (adminsList.contains(update.getMessage().getFrom().getId())) {
-                    if (!spamChatList.contains(chatId)) {
-                        String chatName = update.getMessage().getChat().getTitle();
-                        if (BotDb.getInstance().addNewChatToSpamList(chatId, chatName)) {
-                            spamChatList = BotDb.getInstance().getChatsToSpamList();
-                        }
-                        sendMessage(chatId, "Added to my spamlist");
-                    } else {
-                        sendMessage(chatId, "This chat is already in my spamlist");
+                System.out.println("Someone spam to me!");
+                if (!spamChatList.contains(chatId)) {
+                    String chatName = update.getMessage().getChat().getTitle();
+                    if (BotDb.getInstance().addNewChatToSpamList(chatId, chatName)) {
+                        spamChatList = BotDb.getInstance().getChatsToSpamList();
                     }
-                }
-            }
-
-            if (update.getMessage().getText().equals("/nospam")) {
-                if (adminsList.contains(update.getMessage().getFrom().getId())) {
-                    if (!spamChatList.contains(chatId)) {
-                        String chatName = update.getMessage().getChat().getTitle();
-                        if (BotDb.getInstance().addNewChatToSpamList(chatId, chatName)) {
-                            spamChatList = BotDb.getInstance().getChatsToSpamList();
-                        }
-                        sendMessage(chatId, "Added to my spamlist");
-                    } else {
-                        sendMessage(chatId, "This chat is already in my spamlist");
-                    }
+                    sendMessage(chatId, "Added to my spamlist");
+                } else {
+                    sendMessage(chatId, "This chat is already in my spamlist");
                 }
             }
 
             if (update.getMessage().getText().contains("/setPort")) {
-                if (adminsList.contains(update.getMessage().getFrom().getId())) {
-                    int port = Integer.parseInt(update.getMessage().getText().substring(8));
-                    youTubeListenerStart(port);
-                    sendMessage(chatId, "Looks like everything is OK");
-                }
+                int port = Integer.parseInt(update.getMessage().getText().substring(8));
+                youTubeListenerStart(port);
+                sendMessage(chatId, "Looks like everything is OK");
             }
         }
     }
 
 
-    void sendMessage(long chatId, String messageText) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(messageText);
-
+    void sendMessage(Long chatId, String messageText) {
+        SendMessage message = SendMessage
+                .builder()
+                .chatId(Long.toString(chatId))
+                .text(messageText)
+                .build();
         try {
             execute(message);
         } catch (TelegramApiException e) {

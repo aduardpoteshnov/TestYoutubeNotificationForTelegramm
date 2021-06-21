@@ -28,15 +28,10 @@ import org.xml.sax.SAXException;
 public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
-    private List<String> alreadySentItems;
 
     public YouTubeListener(int port) throws IOException {
         super(port);
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-        alreadySentItems = BotDb.getInstance().getSentItemsList();
-        for(int i = 0; i < alreadySentItems.size(); i++){
-            System.out.println(alreadySentItems.get(i));
-        }
         System.out.println("\b NanoHTTPD Running!");
     }
 
@@ -56,22 +51,7 @@ public class YouTubeListener extends NanoHTTPD {
         }
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
-            long subStart = System.currentTimeMillis();
-            long expireTime = Long.parseLong(session.getParameters().get("hub.lease_seconds").get(0));
-            long subExpired = subStart + expireTime;
-            if (BotDb.getInstance().isSubscriptionExist("Ishtvar")){
-                BotDb.getInstance().updateSubscription
-                        ("Ishtvar",
-                                "https://www.youtube.com/channel/UCN4FNK7oAe2Bmaw7Oi5blog",
-                                subStart,
-                                subExpired);
-            }else {
-                BotDb.getInstance().addSubscription
-                        ("Ishtvar",
-                                "https://www.youtube.com/channel/UCN4FNK7oAe2Bmaw7Oi5blog",
-                                subStart,
-                                subExpired);
-            }
+            System.out.println("Gotta!!!");
             return newFixedLengthResponse(session.getParameters().get("hub.challenge").get(0));
         }
         return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT,
@@ -137,53 +117,13 @@ public class YouTubeListener extends NanoHTTPD {
         return "";
     }
 
-    private void handleNewlyReceivedVideo(HashMap<String, String> newVideo){
+    private void handleNewlyReceivedVideo(HashMap<String, String> newVideo) {
         String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
-        if(alreadySentItems.contains(videoId)){
-            HashMap<String, String > oldItem = BotDb.getInstance().getSentItemByVid(videoId);
-            String oldDate = oldItem.get("updated");
-            if(isTimeBetweenUpdatesIsOK(date, oldDate)){
-                BotDb.getInstance().updateSentItems(newVideo);
-                observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
-            }else {
-                observer.newUpdateReceived("Service Message, \n " +
-                        "Interval between updates the same video is too short. \n" +
-                        "Interval value is 60min now");
-            }
-        }else {
-            BotDb.getInstance().addNewSentItem(newVideo);
-            alreadySentItems = BotDb.getInstance().getSentItemsList();
-            observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
-        }
+        observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
         this.observer = observer;
-    }
-
-    private boolean isTimeBetweenUpdatesIsOK(String newDate, String oldDate){
-        System.out.println(newDate);
-        System.out.println(oldDate);
-        long okTime = convertMinToMs(59);
-        return (parseDate(newDate) - parseDate(oldDate) >= okTime);
-    }
-
-    private long parseDate(String dateToParse){
-        long dateToReturn = 578924129106L;
-        String dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS";
-        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
-        try {
-            dateToReturn = sdf.parse(dateToParse).getTime();
-            System.out.println("parsedDate " + dateToReturn);
-        } catch (ParseException e) {
-            System.out.println("ParseDate error");
-            e.printStackTrace();
-        }
-        return dateToReturn;
-    }
-
-    private long convertMinToMs(int min){
-        return min * 60000L;
     }
 }

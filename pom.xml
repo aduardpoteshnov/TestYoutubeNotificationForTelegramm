@@ -25,7 +25,7 @@
     <dependency>
       <groupId>org.telegram</groupId>
       <artifactId>telegrambots</artifactId>
-      <version>4.8</version>
+      <version>5.2.0</version>
     </dependency>
     <dependency>
       <groupId>org.nanohttpd</groupId> <!-- <groupId>com.nanohttpd</groupId> for 2.1.0 and earlier -->
