@@ -121,7 +121,11 @@ public class YouTubeListener extends NanoHTTPD {
     private void handleNewlyReceivedVideo(HashMap<String, String> newVideo) {
         String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
-        observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+        if (videoId == null){
+            observer.newUpdateReceived("message with null videoId received and successfully filtered");
+        }else {
+            observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+        }
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
