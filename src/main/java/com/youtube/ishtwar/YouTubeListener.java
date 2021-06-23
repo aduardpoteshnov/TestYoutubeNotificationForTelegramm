@@ -43,7 +43,8 @@ public class YouTubeListener extends NanoHTTPD {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body); //вытаскиваем бодик
                 for (Map.Entry entry : body.entrySet()) {
-                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу обрабатываем
+                    System.out.println(entry.getValue().toString()); // выводим в консоль тело полученного поста
+                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                 }
                 return newFixedLengthResponse("OK");
             } catch (IOException | ResponseException e) {
