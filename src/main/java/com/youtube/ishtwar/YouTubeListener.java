@@ -39,22 +39,21 @@ public class YouTubeListener extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {  //Ловим хттп реквест
         if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
-            System.out.println("NEW POST RECEIVED");
+            System.out.println("NEW POST RECEIVED" + new Date().getTime());
             if (dateOfLastUpdate == 0) {
                 dateOfLastUpdate = new Date().getTime();
             } else {
                 if ((dateOfLastUpdate + 5000) <= new Date().getTime()) {
-                    duplicatesHandler("Duplicate received");
+                    return newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "OK");
                 } else
-
-            try {
-                Map<String, String> body = new HashMap<>();
-                session.parseBody(body); //вытаскиваем бодик
-                for (Map.Entry entry : body.entrySet()) {
-                    System.out.println(entry.getValue().toString()); // выводим в консоль тело полученного поста
-                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
-                }
-                return newFixedLengthResponse("OK");
+                    try {
+                        Map<String, String> body = new HashMap<>();
+                        session.parseBody(body); //вытаскиваем бодик
+                        for (Map.Entry entry : body.entrySet()) {
+                            System.out.println(entry.getValue().toString()); // выводим в консоль тело полученного поста
+                            handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
+                            }
+                        return newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "OK");
             } catch (IOException | ResponseException e) {
                 e.printStackTrace();
             }
