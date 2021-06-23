@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
+    private long dateOfLastUpdate = 0;
 
     public YouTubeListener(int port) throws IOException {
         super(port);
@@ -39,6 +40,13 @@ public class YouTubeListener extends NanoHTTPD {
     public Response serve(IHTTPSession session) {  //Ловим хттп реквест
         if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
             System.out.println("NEW POST RECEIVED");
+            if (dateOfLastUpdate == 0) {
+                dateOfLastUpdate = new Date().getTime();
+            } else {
+                if ((dateOfLastUpdate + 5000) <= new Date().getTime()) {
+                    duplicatesHandler("Duplicate received");
+                } else
+
             try {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body); //вытаскиваем бодик
@@ -50,6 +58,7 @@ public class YouTubeListener extends NanoHTTPD {
             } catch (IOException | ResponseException e) {
                 e.printStackTrace();
             }
+        }
         }
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
@@ -127,6 +136,10 @@ public class YouTubeListener extends NanoHTTPD {
         }else {
             observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
         }
+    }
+
+    private void duplicatesHandler(String message){
+        observer.newUpdateReceived(message);
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
