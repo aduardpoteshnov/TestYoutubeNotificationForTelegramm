@@ -42,7 +42,7 @@ public class YouTubeListener extends NanoHTTPD {
             System.out.println("NEW POST RECEIVED " + new Date().getTime());
             if (filter()) {
                 handleNewlyReceivedVideo("Duplicate received v2");
-                return newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "OK");
+                return newFixedLengthResponse("OK");
             } else {
                 try {
                     Map<String, String> body = new HashMap<>();
@@ -51,7 +51,7 @@ public class YouTubeListener extends NanoHTTPD {
                         System.out.println(entry.getValue().toString()); // выводим в консоль тело полученного поста
                         handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                     }
-                    return newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "OK");
+                    return newFixedLengthResponse("OK");
                 } catch (IOException | ResponseException e) {
                     e.printStackTrace();
                 }
