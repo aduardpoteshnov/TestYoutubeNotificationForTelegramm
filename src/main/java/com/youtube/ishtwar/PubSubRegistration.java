@@ -77,8 +77,8 @@ public class PubSubRegistration {
             HttpPost httpPost = new HttpPost("https://pubsubhubbub.appspot.com/subscribe");
             httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
             List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-            nvps.add(new BasicNameValuePair("hub.callback", "http://2eea36c703b2.ngrok.io/"));
-            nvps.add(new BasicNameValuePair("hub.topic", "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCLAu8nIeamvnNJa7SzQAcgg"));
+            nvps.add(new BasicNameValuePair("hub.callback", "https://test-yt-ishtvar.herokuapp.com/"));
+            nvps.add(new BasicNameValuePair("hub.topic", "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCN4FNK7oAe2Bmaw7Oi5blog"));
             nvps.add(new BasicNameValuePair("hub.verify", "async"));
             nvps.add(new BasicNameValuePair("hub.mode", "subscribe"));
             nvps.add(new BasicNameValuePair("hub.verify_token", ""));
