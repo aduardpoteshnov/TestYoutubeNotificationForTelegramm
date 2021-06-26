@@ -15,15 +15,13 @@ import java.util.List;
 
 public class BotDb {
     private static BotDb dataBase;
-    private ArrayList<Integer> botAdmins;
-    private ArrayList<Long> chatsToSpam;
-    private List<String> alreadySentItems;
-
-    private URI dbUri;
     private final String dbUser;
     private final String dbPwd;
     private final String dbUrl;
-
+    private ArrayList<Integer> botAdmins;
+    private ArrayList<Long> chatsToSpam;
+    private List<String> alreadySentItems;
+    private URI dbUri;
 
     private BotDb() {
         try {
@@ -50,7 +48,6 @@ public class BotDb {
         }
         return localDataBase;
     }
-
 
     private void fillBotAdminsListFromDb() {
         botAdmins = new ArrayList<>();
@@ -80,7 +77,6 @@ public class BotDb {
         fillBotAdminsListFromDb();
         return botAdmins;
     }
-
 
     private void fillChatToSpamListFromDb() {
         chatsToSpam = new ArrayList<>();
@@ -123,7 +119,7 @@ public class BotDb {
             statement.setString(2, chatName);
             result = statement.executeQuery().next();
         } catch (SQLException e) {
-            System.out.println("fillBotAdminsListFromDb problem");
+            System.out.println("addNewChatToSpamList problem");
             e.printStackTrace();
         } finally {
             if (connection != null) {
@@ -137,6 +133,29 @@ public class BotDb {
         return result;
     }
 
+    public boolean removeChatFromSpamList(Long chatId){
+        Connection connection = null;
+        boolean result = false;
+        try {
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
+            PreparedStatement statement = connection.prepareStatement(
+                    "DELETE FROM chatsid WHERE chatid = (?)");
+            statement.setString(1, String.valueOf(chatId));
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("removeChatFromSpamList problem");
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
+    }
 
     private void fillAlreadySentItemsListFromDb() {
         alreadySentItems = new ArrayList<>();
@@ -167,7 +186,7 @@ public class BotDb {
         return alreadySentItems;
     }
 
-    public void addNewSentItem(HashMap<String, String>  newSentItem){
+    public void addNewSentItem(HashMap<String, String> newSentItem) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
@@ -180,14 +199,14 @@ public class BotDb {
             statement.setString(4, newSentItem.get("channelTitle"));
             statement.setString(5, newSentItem.get("channelUri"));
             statement.executeQuery();
-        }catch (SQLException e){
+        } catch (SQLException e) {
             System.out.println("fillBotAdminsListFromDb problem");
             e.printStackTrace();
         } finally {
-            if(connection != null){
+            if (connection != null) {
                 try {
                     connection.close();
-                }catch (SQLException e){
+                } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
@@ -197,19 +216,19 @@ public class BotDb {
     public HashMap<String, String> getSentItemByVid(String videoId) {
         HashMap<String, String> videoEntity = new HashMap<>();
         Connection connection = null;
-        try{
+        try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM sentItems WHERE videoId = (?)");
             statement.setString(1, videoId);
             ResultSet result = statement.executeQuery();
-            if (result.next()){
+            if (result.next()) {
                 videoEntity.put("videoId", result.getString("videoId"));
                 videoEntity.put("published", result.getString("published"));
                 videoEntity.put("updated", result.getString("updated"));
                 videoEntity.put("channelTitle", result.getString("channelTitle"));
                 videoEntity.put("channelUri", result.getString("channelUri"));
             }
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             System.out.println("getSentItemByVid problem");
             e.printStackTrace();
         } finally {
@@ -233,14 +252,14 @@ public class BotDb {
             statement.setString(1, newVideo.get("updated"));
             statement.setString(2, newVideo.get("videoId"));
             statement.executeUpdate();
-        }catch (SQLException e){
+        } catch (SQLException e) {
             System.out.println("updateSentItems problem");
             e.printStackTrace();
         } finally {
-            if(connection != null){
+            if (connection != null) {
                 try {
                     connection.close();
-                }catch (SQLException e){
+                } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
@@ -316,6 +335,4 @@ public class BotDb {
         }
         return result;
     }
-
-
 }

@@ -87,6 +87,18 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 }
             }
 
+            if (update.getMessage().getText().equals("/stopspam")){
+                System.out.println("I've try to stop spam to chat " + chatId);
+                if(spamChatList.contains(chatId)){
+                    if(BotDb.getInstance().removeChatFromSpamList(chatId)){
+                        spamChatList = BotDb.getInstance().getChatsToSpamList();
+                    }
+                    sendMessage(chatId, "Removed from my spamlist");
+                } else {
+                    sendMessage(chatId, "This chat is not in my spamlist now");
+                }
+            }
+
             if (update.getMessage().getText().contains("/setPort")) {
                 int port = Integer.parseInt(update.getMessage().getText().substring(8));
                 youTubeListenerStart(port);
