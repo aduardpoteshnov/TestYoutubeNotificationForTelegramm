@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
+    private long currentTime = 0;
 
     public YouTubeListener(int port) throws IOException {
         super(port);
@@ -38,18 +39,25 @@ public class YouTubeListener extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {  //Ловим хттп реквест
         if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
-            System.out.println("NEW POST RESEIVED");
-            try {
-                Map<String, String> body = new HashMap<>();
-                session.parseBody(body); //вытаскиваем бодик
-                for (Map.Entry entry : body.entrySet()) {
-                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу обрабатываем
-                }
+            System.out.println("NEW POST RECEIVED " + new Date().getTime());
+            if (filter()) {
+                handleNewlyReceivedVideo("Duplicate received v2");
                 return newFixedLengthResponse("OK");
-            } catch (IOException | ResponseException e) {
-                e.printStackTrace();
+            } else {
+                try {
+                    Map<String, String> body = new HashMap<>();
+                    session.parseBody(body); //вытаскиваем бодик
+                    for (Map.Entry entry : body.entrySet()) {
+                        System.out.println(entry.getValue().toString()); // выводим в консоль тело полученного поста
+                        handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
+                    }
+                    return newFixedLengthResponse("OK");
+                } catch (IOException | ResponseException e) {
+                    e.printStackTrace();
+                }
             }
         }
+
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
             System.out.println("New GET receoved");
@@ -76,7 +84,7 @@ public class YouTubeListener extends NanoHTTPD {
 
                 NodeList ytvideoId = element.getElementsByTagName("yt:videoId");
                 Element line = (Element) ytvideoId.item(0);
-                youtubeRequest.put("videoId",  getCharacterDataFromElementXmlParserPart(line));
+                youtubeRequest.put("videoId", getCharacterDataFromElementXmlParserPart(line));
 
                 NodeList published = element.getElementsByTagName("published");
                 line = (Element) published.item(0);
@@ -84,7 +92,7 @@ public class YouTubeListener extends NanoHTTPD {
 
                 NodeList updated = element.getElementsByTagName("updated");
                 line = (Element) updated.item(0);
-                youtubeRequest.put("updated",  getCharacterDataFromElementXmlParserPart(line));
+                youtubeRequest.put("updated", getCharacterDataFromElementXmlParserPart(line));
             }
 
             for (int i = 0; i < author.getLength(); i++) {
@@ -121,10 +129,29 @@ public class YouTubeListener extends NanoHTTPD {
     private void handleNewlyReceivedVideo(HashMap<String, String> newVideo) {
         String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
-        observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+        if (videoId == null) {
+            observer.newUpdateReceived("message with null videoId received and successfully filtered");
+        } else {
+            observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+        }
+    }
+
+    private void handleNewlyReceivedVideo(String message){
+        observer.newUpdateReceived(message);
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
         this.observer = observer;
+    }
+
+    private boolean filter(){
+        if (currentTime == 0){
+            currentTime = new Date().getTime();
+        }else if ((new Date().getTime()) < currentTime + 5000){
+            currentTime = new Date().getTime();
+            return true;
+        }else
+            currentTime = new Date().getTime();
+            return false;
     }
 }
