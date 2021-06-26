@@ -135,7 +135,7 @@ public class BotDb {
 
     public boolean removeChatFromSpamList(Long chatId){
         Connection connection = null;
-        boolean result = false;
+        boolean result = true;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
             PreparedStatement statement = connection.prepareStatement(
@@ -144,6 +144,7 @@ public class BotDb {
             statement.executeUpdate();
         } catch (SQLException e) {
             System.out.println("removeChatFromSpamList problem");
+            result = false;
             e.printStackTrace();
         } finally {
             if (connection != null) {
