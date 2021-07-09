@@ -125,17 +125,18 @@ public class YouTubeListener extends NanoHTTPD {
     private void handleNewlyReceivedVideo(HashMap<String, String> newVideo) {
         String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
-        String cDate = newVideo.get("created");
+        String cDate = newVideo.get("published");
         if (videoId == null) {
             System.out.println("Message with null videoId received and successfully filtered");
         } else {
-            if (itemsToSend.contains(videoId)) {
-                if ((stringToDate(date) - stringToDate(newVideo.get("published"))) > 300000L) {
-                    System.out.println("New url sent to TG");
-                    observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
-                }
+            System.out.println("VideoId is not null. Check publishing and updated time");
+            if ((stringToDate(date) - stringToDate(cDate)) > 300000L) {
+                System.out.println("Everyting is ok with time, url sent to TG");
+                observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+
             } else {
-                System.out.println("New url was not send to TG");
+                System.out.println("Something is wrong with time, url was not send to TG" +
+                                "time between publish and update: " + (stringToDate(date) - stringToDate(cDate)) + " in ms");
                 BotDb.getInstance().addNewSentItem(newVideo);
                 itemsToSend = BotDb.getInstance().getSentItemsList();
             }
