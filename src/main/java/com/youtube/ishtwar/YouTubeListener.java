@@ -130,7 +130,7 @@ public class YouTubeListener extends NanoHTTPD {
             System.out.println("Message with null videoId received and successfully filtered");
         } else {
             if (itemsToSend.contains(videoId)) {
-                if ((stringToDate(date) - stringToDate(newVideo.get("created"))) > 300000L) {
+                if ((stringToDate(date) - stringToDate(newVideo.get("published"))) > 300000L) {
                     System.out.println("New url sent to TG");
                     observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
                 }
