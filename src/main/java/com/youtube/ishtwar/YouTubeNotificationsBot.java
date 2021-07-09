@@ -19,7 +19,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     {
         if (App.httpPort != null) {
             youTubeListenerStart(Integer.parseInt(App.httpPort));
-        }else System.out.println("httpPort is empty");
+        } else System.out.println("httpPort is empty");
     }
 
 
@@ -89,10 +89,10 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 }
             }
 
-            if (update.getMessage().getText().equals("/stopspam")){
+            if (update.getMessage().getText().equals("/stopspam")) {
                 System.out.println("I've try to stop spam to chat " + chatId);
-                if(spamChatList.contains(chatId)){
-                    if(BotDb.getInstance().removeChatFromSpamList(chatId)){
+                if (spamChatList.contains(chatId)) {
+                    if (BotDb.getInstance().removeChatFromSpamList(chatId)) {
                         spamChatList = BotDb.getInstance().getChatsToSpamList();
                     }
                     sendMessage(chatId, "Removed from my spamlist");
@@ -107,7 +107,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Looks like everything is OK");
             }
 
-            if (update.getMessage().getText().contains("/sub")){
+            if (update.getMessage().getText().contains("/sub")) {
                 new PubSubRegistration().subscribe();
                 sendMessage(chatId, "Процедура подписки на Ishtvar вроде запустилась. hub.lease_seconds = 432000(5 суток). А получилось или нет узнаем позже");
             }
@@ -130,11 +130,11 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
 
     public void newUpdateReceived(String urlToPost) {
         for (Long aLong : spamChatList) {
-            sendMessage(aLong, urlToPost);
+            sendMessageWithKB(aLong, urlToPost);
         }
     }
 
-    void sendMessageWithKB(Long chatId, String messageText){
+    void sendMessageWithKB(Long chatId, String messageText) {
         SendMessage message = SendMessage
                 .builder()
                 .chatId(Long.toString(chatId))
@@ -143,7 +143,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 .build();
     }
 
-    private InlineKeyboardMarkup twoButtonsKB(){
+    private InlineKeyboardMarkup twoButtonsKB() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         List<InlineKeyboardButton> buttons = new ArrayList<>();
@@ -156,6 +156,6 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
         keyboard.add(buttons);
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
-        }
     }
 }
+
