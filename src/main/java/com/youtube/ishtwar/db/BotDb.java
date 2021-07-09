@@ -54,8 +54,9 @@ public class BotDb {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
+            ResultSet result;
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM botadmin");
-            ResultSet result = statement.executeQuery();
+                result = statement.executeQuery();
             while (result.next()) {
                 botAdmins.add(Integer.parseInt(result.getString("userId")));
             }

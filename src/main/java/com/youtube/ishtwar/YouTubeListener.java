@@ -38,18 +38,17 @@ public class YouTubeListener extends NanoHTTPD {
     public Response serve(IHTTPSession session) {  //Ловим хттп реквест
         if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
             System.out.println("NEW POST RECEIVED " + new Date().getTime());
-                try {
-                    Map<String, String> body = new HashMap<>();
-                    session.parseBody(body); //вытаскиваем бодик
-                    for (Map.Entry entry : body.entrySet()) {
-                        handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
-                    }
-                    return newFixedLengthResponse("OK");
-                } catch (IOException | ResponseException e) {
-                    e.printStackTrace();
+            try {
+                Map<String, String> body = new HashMap<>();
+                session.parseBody(body); //вытаскиваем бодик
+                for (Map.Entry entry : body.entrySet()) {
+                    handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                 }
+                return newFixedLengthResponse("OK");
+            } catch (IOException | ResponseException e) {
+                e.printStackTrace();
             }
-
+        }
 
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
@@ -125,11 +124,13 @@ public class YouTubeListener extends NanoHTTPD {
         if (videoId == null) {
             System.out.println("Message with null videoId received and successfully filtered");
         } else {
-            if (itemsToSend.contains(videoId)){
-                if ((stringToDate(date) - stringToDate(newVideo.get("created"))) > 300000L){
+            if (itemsToSend.contains(videoId)) {
+                if ((stringToDate(date) - stringToDate(newVideo.get("created"))) > 300000L) {
+                    System.out.println("New url sent to TG");
                     observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
                 }
-            }else {
+            } else {
+                System.out.println("New url was not send to TG");
                 BotDb.getInstance().addNewSentItem(newVideo);
                 itemsToSend = BotDb.getInstance().getSentItemsList();
             }
@@ -140,14 +141,15 @@ public class YouTubeListener extends NanoHTTPD {
         this.observer = observer;
     }
 
-    private long stringToDate(String sDate){
+    private long stringToDate(String sDate) {
         long timestamp = 0;
         try {
-            timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(sDate).getTime();
-        }catch (ParseException e){
+            timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(sDate).getTime();
+        } catch (ParseException e) {
             System.out.println("stringToDate parser problems");
             e.printStackTrace();
         }
         return timestamp;
     }
 }
+
