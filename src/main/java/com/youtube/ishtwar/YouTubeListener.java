@@ -41,10 +41,12 @@ public class YouTubeListener extends NanoHTTPD {
             try {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body); //вытаскиваем бодик
+                System.out.println("Get post body");
                 for (Map.Entry entry : body.entrySet()) {
+                    System.out.println("Second parse body to another hashmap");
                     handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                 }
-                return newFixedLengthResponse("OK");
+                return newFixedLengthResponse(Response.Status.ACCEPTED, MIME_PLAINTEXT, "OK");
             } catch (IOException | ResponseException e) {
                 e.printStackTrace();
             }
@@ -52,7 +54,7 @@ public class YouTubeListener extends NanoHTTPD {
 
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
-            System.out.println("New GET receoved");
+            System.out.println("New GET received");
             return newFixedLengthResponse(session.getParameters().get("hub.challenge").get(0));
         }
         return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT,
