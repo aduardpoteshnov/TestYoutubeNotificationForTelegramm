@@ -141,6 +141,11 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 .text(messageText)
                 .replyMarkup(twoButtonsKB())
                 .build();
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     private InlineKeyboardMarkup twoButtonsKB() {
