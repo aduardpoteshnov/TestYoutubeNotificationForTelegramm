@@ -4,9 +4,11 @@ import com.youtube.ishtwar.db.BotDb;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.List;
+import java.util.*;
 
 public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     String botName = System.getenv("BOT_NAME");
@@ -129,6 +131,31 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
     public void newUpdateReceived(String urlToPost) {
         for (Long aLong : spamChatList) {
             sendMessage(aLong, urlToPost);
+        }
+    }
+
+    void sendMessageWithKB(Long chatId, String messageText){
+        SendMessage message = SendMessage
+                .builder()
+                .chatId(Long.toString(chatId))
+                .text(messageText)
+                .replyMarkup(twoButtonsKB())
+                .build();
+    }
+
+    private InlineKeyboardMarkup twoButtonsKB(){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> buttons = new ArrayList<>();
+        InlineKeyboardButton buttonFire = new InlineKeyboardButton();
+        InlineKeyboardButton buttonShit = new InlineKeyboardButton();
+        buttonFire.setText("ОГОНЬ!");
+        buttonShit.setText("НЕ ОГОНЬ!");
+        buttons.add(buttonFire);
+        buttons.add(buttonShit);
+        keyboard.add(buttons);
+        inlineKeyboardMarkup.setKeyboard(keyboard);
+        return inlineKeyboardMarkup;
         }
     }
 }
