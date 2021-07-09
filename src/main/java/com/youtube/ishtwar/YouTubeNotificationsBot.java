@@ -130,7 +130,7 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
 
     public void newUpdateReceived(String urlToPost) {
         for (Long aLong : spamChatList) {
-            sendMessageWithKB(aLong, urlToPost);
+            sendMessage(aLong, urlToPost);
         }
     }
 
