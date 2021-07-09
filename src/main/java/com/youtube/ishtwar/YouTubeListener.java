@@ -144,7 +144,7 @@ public class YouTubeListener extends NanoHTTPD {
     private long stringToDate(String sDate) {
         long timestamp = 0;
         try {
-            timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(sDate).getTime();
+            timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(sDate).getTime();
         } catch (ParseException e) {
             System.out.println("stringToDate parser problems");
             e.printStackTrace();
