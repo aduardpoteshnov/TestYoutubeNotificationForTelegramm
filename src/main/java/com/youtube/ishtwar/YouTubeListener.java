@@ -42,7 +42,9 @@ public class YouTubeListener extends NanoHTTPD {
                 Map<String, String> body = new HashMap<>();
                 session.parseBody(body); //вытаскиваем бодик
                 System.out.println("Get post body");
+                System.out.println("+++++++++++++++++++++==================+++++++++++++++");
                 for (Map.Entry entry : body.entrySet()) {
+                    System.out.println(xmlParser(entry.getValue().toString()));
                     System.out.println("Second parse body to another hashmap");
                     handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                 }
@@ -123,6 +125,7 @@ public class YouTubeListener extends NanoHTTPD {
     private void handleNewlyReceivedVideo(HashMap<String, String> newVideo) {
         String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
+        String cDate = newVideo.get("created");
         if (videoId == null) {
             System.out.println("Message with null videoId received and successfully filtered");
         } else {
