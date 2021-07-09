@@ -104,6 +104,11 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
                 youTubeListenerStart(port);
                 sendMessage(chatId, "Looks like everything is OK");
             }
+
+            if (update.getMessage().getText().contains("/sub")){
+                new PubSubRegistration().subscribe();
+                sendMessage(chatId, "Процедура подписки на Ishtvar вроде запустилась. hub.lease_seconds = 300000L(5 суток). А получилось или нет узнаем позже");
+            }
         }
     }
 

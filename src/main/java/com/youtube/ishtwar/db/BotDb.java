@@ -201,7 +201,7 @@ public class BotDb {
             statement.setString(5, newSentItem.get("channelUri"));
             statement.executeQuery();
         } catch (SQLException e) {
-            System.out.println("fillBotAdminsListFromDb problem");
+            System.out.println("fill addNewSentItem problem");
             e.printStackTrace();
         } finally {
             if (connection != null) {

@@ -4,12 +4,10 @@ import com.youtube.ishtwar.db.BotDb;
 import fi.iki.elonen.NanoHTTPD;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import java.io.StringReader;
 
@@ -28,7 +26,7 @@ import org.xml.sax.SAXException;
 public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
-    private long currentTime = 0;
+    private List<String> itemsToSend = BotDb.getInstance().getSentItemsList();
 
     public YouTubeListener(int port) throws IOException {
         super(port);
@@ -40,15 +38,10 @@ public class YouTubeListener extends NanoHTTPD {
     public Response serve(IHTTPSession session) {  //Ловим хттп реквест
         if (session.getMethod() == Method.POST) {   //post ожидаем только от ютубчика
             System.out.println("NEW POST RECEIVED " + new Date().getTime());
-            if (filter()) {
-                handleNewlyReceivedVideo("Duplicate received v2");
-                return newFixedLengthResponse("OK");
-            } else {
                 try {
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body); //вытаскиваем бодик
                     for (Map.Entry entry : body.entrySet()) {
-                        System.out.println(entry.getValue().toString()); // выводим в консоль тело полученного поста
                         handleNewlyReceivedVideo(xmlParser(entry.getValue().toString())); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                     }
                     return newFixedLengthResponse("OK");
@@ -56,7 +49,7 @@ public class YouTubeListener extends NanoHTTPD {
                     e.printStackTrace();
                 }
             }
-        }
+
 
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
@@ -130,28 +123,31 @@ public class YouTubeListener extends NanoHTTPD {
         String videoId = newVideo.get("videoId");
         String date = newVideo.get("updated");
         if (videoId == null) {
-            observer.newUpdateReceived("message with null videoId received and successfully filtered");
+            System.out.println("Message with null videoId received and successfully filtered");
         } else {
-            observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+            if (itemsToSend.contains(videoId)){
+                if ((stringToDate(date) - stringToDate(newVideo.get("created"))) > 300000L){
+                    observer.newUpdateReceived("https://www.youtube.com/watch?v=" + videoId + "&date=" + date);
+                }
+            }else {
+                BotDb.getInstance().addNewSentItem(newVideo);
+                itemsToSend = BotDb.getInstance().getSentItemsList();
+            }
         }
-    }
-
-    private void handleNewlyReceivedVideo(String message){
-        observer.newUpdateReceived(message);
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
         this.observer = observer;
     }
 
-    private boolean filter(){
-        if (currentTime == 0){
-            currentTime = new Date().getTime();
-        }else if ((new Date().getTime()) < currentTime + 5000){
-            currentTime = new Date().getTime();
-            return true;
-        }else
-            currentTime = new Date().getTime();
-            return false;
+    private long stringToDate(String sDate){
+        long timestamp = 0;
+        try {
+            timestamp = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(sDate).getTime();
+        }catch (ParseException e){
+            System.out.println("stringToDate parser problems");
+            e.printStackTrace();
+        }
+        return timestamp;
     }
 }

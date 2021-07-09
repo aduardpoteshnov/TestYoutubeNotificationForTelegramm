@@ -34,7 +34,7 @@ public class PubSubRegistration {
             nvps.add(new BasicNameValuePair("hub.mode", "subscribe"));
             nvps.add(new BasicNameValuePair("hub.verify_token", ""));
             nvps.add(new BasicNameValuePair("hub.secret", ""));
-            nvps.add(new BasicNameValuePair("hub.lease_seconds", ""));
+            nvps.add(new BasicNameValuePair("hub.lease_seconds", "432000"));
 
             httpPost.setEntity(new UrlEncodedFormEntity(nvps));
 
@@ -83,7 +83,7 @@ public class PubSubRegistration {
             nvps.add(new BasicNameValuePair("hub.mode", "subscribe"));
             nvps.add(new BasicNameValuePair("hub.verify_token", ""));
             nvps.add(new BasicNameValuePair("hub.secret", ""));
-            nvps.add(new BasicNameValuePair("hub.lease_seconds", ""));
+            nvps.add(new BasicNameValuePair("hub.lease_seconds", "432000"));
 
             httpPost.setEntity(new UrlEncodedFormEntity(nvps));
 
