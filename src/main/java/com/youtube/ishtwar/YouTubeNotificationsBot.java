@@ -133,34 +133,5 @@ public class YouTubeNotificationsBot extends TelegramLongPollingBot {
             sendMessage(aLong, urlToPost);
         }
     }
-
-    void sendMessageWithKB(Long chatId, String messageText) {
-        SendMessage message = SendMessage
-                .builder()
-                .chatId(Long.toString(chatId))
-                .text(messageText)
-                .replyMarkup(twoButtonsKB())
-                .build();
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private InlineKeyboardMarkup twoButtonsKB() {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        List<InlineKeyboardButton> buttons = new ArrayList<>();
-        InlineKeyboardButton buttonFire = new InlineKeyboardButton();
-        InlineKeyboardButton buttonShit = new InlineKeyboardButton();
-        buttonFire.setText("ОГОНЬ!");
-        buttonShit.setText("НЕ ОГОНЬ!");
-        buttons.add(buttonFire);
-        buttons.add(buttonShit);
-        keyboard.add(buttons);
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        return inlineKeyboardMarkup;
-    }
 }
 

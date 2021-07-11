@@ -6,8 +6,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -15,51 +13,36 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PubSubRegistration {
-    String callbackURI = "";
+    String callbackURI = "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCN4FNK7oAe2Bmaw7Oi5blog";
 
     public void subscribe() {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         try {
             HttpPost httpPost = new HttpPost("https://pubsubhubbub.appspot.com/subscribe");
             httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
-            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-            nvps.add(new BasicNameValuePair("hub.callback", "https://test-yt-ishtvar.herokuapp.com/"));
-            nvps.add(new BasicNameValuePair("hub.topic", "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCN4FNK7oAe2Bmaw7Oi5blog"));
-            nvps.add(new BasicNameValuePair("hub.verify", "async"));
-            nvps.add(new BasicNameValuePair("hub.mode", "subscribe"));
-            nvps.add(new BasicNameValuePair("hub.verify_token", ""));
-            nvps.add(new BasicNameValuePair("hub.secret", ""));
-            nvps.add(new BasicNameValuePair("hub.lease_seconds", "432000"));
+            List<NameValuePair> subRequest = new ArrayList<>();
+            subRequest.add(new BasicNameValuePair("hub.callback", "https://test-yt-ishtvar.herokuapp.com/"));
+            subRequest.add(new BasicNameValuePair("hub.topic", callbackURI));
+            subRequest.add(new BasicNameValuePair("hub.verify", "async"));
+            subRequest.add(new BasicNameValuePair("hub.mode", "subscribe"));
+            subRequest.add(new BasicNameValuePair("hub.verify_token", ""));
+            subRequest.add(new BasicNameValuePair("hub.secret", ""));
+            subRequest.add(new BasicNameValuePair("hub.lease_seconds", "432000")); //value in seconds 432000 equals to 5days
 
-            httpPost.setEntity(new UrlEncodedFormEntity(nvps));
+            httpPost.setEntity(new UrlEncodedFormEntity(subRequest));
 
             System.out.println("Executing request " + httpPost.getRequestLine());
 
             // Create a custom response handler
-            ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
-
-                @Override
-                public String handleResponse(
-                        final HttpResponse response) throws ClientProtocolException, IOException {
-                    int status = response.getStatusLine().getStatusCode();
-                    System.out.println("Response status is: " + status);
-                    if (status >= 200 && status < 300) {
-                        HttpEntity entity = response.getEntity();
-                        return entity != null ? EntityUtils.toString(entity) : null;
-                    } else {
-                        throw new ClientProtocolException("Unexpected response status: " + status);
-                    }
-                }
-
-            };
+            ResponseHandler<String> responseHandler = this::getString;
             String responseBody = httpclient.execute(httpPost, responseHandler);
             System.out.println("----------------------------------------");
             System.out.println(responseBody);
+            System.out.println("________________________________________");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -71,110 +54,14 @@ public class PubSubRegistration {
         }
     }
 
-    public void testSubscribe() {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        try {
-            HttpPost httpPost = new HttpPost("https://pubsubhubbub.appspot.com/subscribe");
-            httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
-            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-            nvps.add(new BasicNameValuePair("hub.callback", "https://test-yt-ishtvar.herokuapp.com/"));
-            nvps.add(new BasicNameValuePair("hub.topic", "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCN4FNK7oAe2Bmaw7Oi5blog"));
-            nvps.add(new BasicNameValuePair("hub.verify", "async"));
-            nvps.add(new BasicNameValuePair("hub.mode", "subscribe"));
-            nvps.add(new BasicNameValuePair("hub.verify_token", ""));
-            nvps.add(new BasicNameValuePair("hub.secret", ""));
-            nvps.add(new BasicNameValuePair("hub.lease_seconds", "432000"));
-
-            httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-
-            System.out.println("Executing request " + httpPost.getRequestLine());
-
-            // Create a custom response handler
-            ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
-
-                @Override
-                public String handleResponse(
-                        final HttpResponse response) throws ClientProtocolException, IOException {
-                    int status = response.getStatusLine().getStatusCode();
-                    System.out.println("Response status is: " + status);
-                    if (status >= 200 && status < 300) {
-                        HttpEntity entity = response.getEntity();
-                        return entity != null ? EntityUtils.toString(entity) : null;
-                    } else {
-                        throw new ClientProtocolException("Unexpected response status: " + status);
-                    }
-                }
-            };
-
-            String responseBody = httpclient.execute(httpPost, responseHandler);
-            System.out.println("----------------------------------------");
-            System.out.println(responseBody);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                httpclient.close();
-                System.out.println("Subscription to mouse's channel completed!");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    private String getString(HttpResponse response) throws IOException {
+        int status = response.getStatusLine().getStatusCode();
+        System.out.println("Response status is: " + status);
+        if (status >= 200 && status < 300) {
+            HttpEntity entity = response.getEntity();
+            return entity != null ? EntityUtils.toString(entity) : null;
+        } else {
+            throw new ClientProtocolException("Unexpected response status: " + status);
         }
     }
-
-
-
-
-    public void unsubscribe() {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        try {
-            HttpPost httpPost = new HttpPost("https://pubsubhubbub.appspot.com/subscribe");
-            httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
-            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-            nvps.add(new BasicNameValuePair("hub.callback", "https://test-yt-ishtvar.herokuapp.com/"));
-            nvps.add(new BasicNameValuePair("hub.topic", "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCN4FNK7oAe2Bmaw7Oi5blog"));
-            nvps.add(new BasicNameValuePair("hub.verify", "async"));
-            nvps.add(new BasicNameValuePair("hub.mode", "unsubscribe"));
-            nvps.add(new BasicNameValuePair("hub.verify_token", ""));
-            nvps.add(new BasicNameValuePair("hub.secret", ""));
-            nvps.add(new BasicNameValuePair("hub.lease_seconds", ""));
-
-            httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-
-            System.out.println("Executing request " + httpPost.getRequestLine());
-
-            // Create a custom response handler
-            ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
-
-                @Override
-                public String handleResponse(
-                        final HttpResponse response) throws ClientProtocolException, IOException {
-                    int status = response.getStatusLine().getStatusCode();
-                    System.out.println("Response status is: " + status);
-                    if (status >= 200 && status < 300) {
-                        HttpEntity entity = response.getEntity();
-                        return entity != null ? EntityUtils.toString(entity) : null;
-                    } else {
-                        throw new ClientProtocolException("Unexpected response status: " + status);
-                    }
-                }
-
-            };
-            String responseBody = httpclient.execute(httpPost, responseHandler);
-            System.out.println("----------------------------------------");
-            System.out.println(responseBody);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                httpclient.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
-    /*public void checkSubscribtion(){
-
-    }*/
 }

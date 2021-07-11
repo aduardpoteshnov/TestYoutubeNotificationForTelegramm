@@ -6,6 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /*To implement
@@ -18,9 +19,8 @@ public class BotDb {
     private final String dbUser;
     private final String dbPwd;
     private final String dbUrl;
-    private ArrayList<Integer> botAdmins;
     private ArrayList<Long> chatsToSpam;
-    private List<String> alreadySentItems;
+    private Map<String, Integer> alreadySentItems;
     private URI dbUri;
 
     private BotDb() {
@@ -47,36 +47,6 @@ public class BotDb {
             }
         }
         return localDataBase;
-    }
-
-    private void fillBotAdminsListFromDb() {
-        botAdmins = new ArrayList<>();
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            ResultSet result;
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM botadmin");
-                result = statement.executeQuery();
-            while (result.next()) {
-                botAdmins.add(Integer.parseInt(result.getString("userId")));
-            }
-        } catch (SQLException e) {
-            System.out.println("fillBotAdminsListFromDb problem");
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public ArrayList<Integer> getBotAdminsList() {
-        fillBotAdminsListFromDb();
-        return botAdmins;
     }
 
     private void fillChatToSpamListFromDb() {
@@ -134,7 +104,7 @@ public class BotDb {
         return result;
     }
 
-    public boolean removeChatFromSpamList(Long chatId){
+    public boolean removeChatFromSpamList(Long chatId) {
         Connection connection = null;
         boolean result = true;
         try {
@@ -160,14 +130,14 @@ public class BotDb {
     }
 
     private void fillAlreadySentItemsListFromDb() {
-        alreadySentItems = new ArrayList<>();
+        alreadySentItems = new HashMap<>();
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM sentItems");
             ResultSet result = statement.executeQuery();
             while (result.next()) {
-                alreadySentItems.add(result.getString("videoId"));
+                alreadySentItems.put(result.getString("videoId"), result.getInt("isSent"));
             }
         } catch (SQLException e) {
             System.out.println("fillAlreadySentItemsListFromDb problem");
@@ -183,9 +153,32 @@ public class BotDb {
         }
     }
 
-    public List<String> getSentItemsList() {
+    public Map<String, Integer> getSentItemsList() {
         fillAlreadySentItemsListFromDb();
         return alreadySentItems;
+    }
+
+    public void markAsSendById (String videoId){
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
+            PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE sentitems SET issent = 1 WHERE videoid = (?)");
+            statement.setString(1, videoId);
+            statement.executeUpdate();
+
+        }catch (SQLException e){
+            System.out.println("Problems in SQL markAsSendById");
+            e.printStackTrace();
+        } finally {
+            if(connection != null){
+                try {
+                    connection.close();
+                }catch (SQLException e){
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public void addNewSentItem(HashMap<String, String> newSentItem) {
@@ -215,126 +208,4 @@ public class BotDb {
         }
     }
 
-    public HashMap<String, String> getSentItemByVid(String videoId) {
-        HashMap<String, String> videoEntity = new HashMap<>();
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM sentItems WHERE videoId = (?)");
-            statement.setString(1, videoId);
-            ResultSet result = statement.executeQuery();
-            if (result.next()) {
-                videoEntity.put("videoId", result.getString("videoId"));
-                videoEntity.put("published", result.getString("published"));
-                videoEntity.put("updated", result.getString("updated"));
-                videoEntity.put("channelTitle", result.getString("channelTitle"));
-                videoEntity.put("channelUri", result.getString("channelUri"));
-            }
-        } catch (SQLException e) {
-            System.out.println("getSentItemByVid problem");
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return videoEntity;
-    }
-
-    public void updateSentItems(HashMap<String, String> newVideo) {
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            PreparedStatement statement = connection.prepareStatement(
-                    "UPDATE sentItems SET updated = (?) WHERE videoId = (?)");
-            statement.setString(1, newVideo.get("updated"));
-            statement.setString(2, newVideo.get("videoId"));
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println("updateSentItems problem");
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public void addSubscription(String channelName, String channelUri, long startDate, long expireDate) {
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO subscriptions (id, channelName, channelUri, startDate, expireDate) " +
-                            "values (DEFAULT, (?), (?), (?), (?)) RETURNING id");
-            statement.setString(1, channelName);
-            statement.setString(2, channelUri);
-            statement.setString(3, String.valueOf(startDate));
-            statement.setString(4, String.valueOf(expireDate));
-        } catch (SQLException e) {
-            System.out.println("addSubscription problem");
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public void updateSubscription(String channelName, String channelUri, long startDate, long expireDate) {
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            PreparedStatement statement = connection.prepareStatement(
-                    "UPDATE subscriptions SET expireDate = (?) where channelName = (?)");
-            statement.setString(1, String.valueOf(expireDate));
-            statement.setString(2, channelName);
-        } catch (SQLException e) {
-            System.out.println("addSubscription problem");
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public boolean isSubscriptionExist(String channelName) {
-        Connection connection = null;
-        boolean result = false;
-        try {
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM subscriptions WHERE channelName = (?)");
-            statement.setString(1, channelName);
-            result = statement.executeQuery().next();
-        } catch (SQLException e) {
-            System.out.println("addSubscription problem");
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return result;
-    }
 }
