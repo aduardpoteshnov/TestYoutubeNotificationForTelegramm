@@ -2,22 +2,22 @@ package com.youtube.ishtwar;
 
 public class SendAfterDelay extends Thread {
 
-    private final YouTubeNotificationsBot bot;
-    private String videoId;
+    private final YouTubeListener listener;
+    private final String videoId;
 
 
-    SendAfterDelay(YouTubeNotificationsBot bot, String videoId) {
-        this.bot = bot;
+    SendAfterDelay(YouTubeListener listener, String videoId) {
+        this.listener = listener;
         this.videoId = videoId;
     }
 
     public void run() {
         System.out.println("SendAfterDelay instance is running");
         try {
-            wait(600000);
+            sleep(600000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        bot.newUpdateReceived(videoId);
+        listener.sendItemToBot(videoId);
     }
 }

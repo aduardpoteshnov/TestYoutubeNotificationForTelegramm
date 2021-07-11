@@ -25,7 +25,8 @@ import org.xml.sax.SAXException;
 public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
-    private Map<String, Integer> sentItems;
+    private HashMap<String, Integer> sentItems;
+    SendAfterDelay sendAfterDelay;
 
     public YouTubeListener(int port) throws IOException {
         super(port);
@@ -49,7 +50,7 @@ public class YouTubeListener extends NanoHTTPD {
                     System.out.println("Second parse body to another hashmap");
                     handleNewlyReceivedVideo(xmlParser(value)); //отправляем xml полученый из бодика и парсим его в еще одну хешмапу
                 });
-                return newFixedLengthResponse(Response.Status.ACCEPTED, MIME_PLAINTEXT, "OK");
+                return newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "OK");
             } catch (IOException | ResponseException e) {
                 e.printStackTrace();
             }
@@ -58,6 +59,7 @@ public class YouTubeListener extends NanoHTTPD {
 
         if (session.getMethod() == Method.GET) { //Гет ожидаем только от pubHubSub. Ловим, отвечаем обратно + регаем новую подписку в базе
             System.out.println("New GET received");
+            System.out.println(session.getParameters().toString());
             return newFixedLengthResponse(session.getParameters().get("hub.challenge").get(0));
         }
         return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT,
@@ -136,10 +138,20 @@ public class YouTubeListener extends NanoHTTPD {
                 sentItems = BotDb.getInstance().getSentItemsList();
                 System.out.println("New item added to sentItemsList itemId: " + videoId);
                 System.out.println("And also send to delay worker");
-                new SendAfterDelay(observer, videoId).start();
+                synchronized (sendAfterDelay = new SendAfterDelay(this, videoId)){
+                    sendAfterDelay.start();
+                }
                 observer.newUpdateReceived("Новый объект полученн и отправлен в SendAfterDelay delay is set to 10m");
             }
-        } else sendItemToBot(videoId);
+        } else {
+            if (sentItems.containsKey(videoId)){
+                sendItemToBot(videoId);
+            }else {
+                BotDb.getInstance().addNewSentItem(newVideo);
+                sentItems = BotDb.getInstance().getSentItemsList();
+                sendItemToBot(videoId);
+            }
+        }
     }
 
     public void setObserver(YouTubeNotificationsBot observer) {
@@ -158,12 +170,15 @@ public class YouTubeListener extends NanoHTTPD {
     }
 
     private boolean isVideoNew(String updated, String published) {
-        long minTimeInterval = 300000;
-        return (stringToDate(updated) - stringToDate(published)) > minTimeInterval;
+        long minTimeInterval = 300000L;
+        System.out.println("min interval = " + minTimeInterval);
+        System.out.println((stringToDate(updated) - stringToDate(published)) + " difference between published updated");
+        return (stringToDate(updated) - stringToDate(published)) < minTimeInterval;
     }
 
     public void sendItemToBot(String videoId){
         String urlToPost = "https://www.youtube.com/watch?v=" + videoId + "&date=" + new Date().getTime();
+        System.out.println(sentItems.get(videoId));
         if(sentItems.get(videoId) == 0){
             System.out.println("New post is send to TG with id: " + videoId);
             BotDb.getInstance().markAsSendById(videoId);

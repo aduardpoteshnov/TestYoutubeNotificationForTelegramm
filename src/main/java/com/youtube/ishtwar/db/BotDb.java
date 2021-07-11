@@ -20,7 +20,7 @@ public class BotDb {
     private final String dbPwd;
     private final String dbUrl;
     private ArrayList<Long> chatsToSpam;
-    private Map<String, Integer> alreadySentItems;
+    private HashMap<String, Integer> alreadySentItems;
     private URI dbUri;
 
     private BotDb() {
@@ -153,7 +153,7 @@ public class BotDb {
         }
     }
 
-    public Map<String, Integer> getSentItemsList() {
+    public HashMap<String, Integer> getSentItemsList() {
         fillAlreadySentItemsListFromDb();
         return alreadySentItems;
     }
