@@ -10,6 +10,7 @@ import java.util.*;
 
 import java.io.StringReader;
 
+import javax.swing.text.html.ListView;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -26,7 +27,6 @@ public class YouTubeListener extends NanoHTTPD {
 
     private YouTubeNotificationsBot observer;
     private HashMap<String, Integer> sentItems;
-    SendAfterDelay sendAfterDelay;
 
     public YouTubeListener(int port) throws IOException {
         super(port);
@@ -127,30 +127,36 @@ public class YouTubeListener extends NanoHTTPD {
         String published = newVideo.get("published");
 
         if (videoId == null) {
-            System.out.println("Received video: videoId is null. No message to tg was send");
-        } else if (isVideoNew(updated, published)) {
-            if (sentItems.containsKey(videoId)) {
-                System.out.println("Received video: Video is new, but contains in sentItemsList." +
-                        " Looks like duplicate, actions rejected");
-            } else {
-                System.out.println("Received video: Video is new, doesn't contains in sentItemsList");
-                BotDb.getInstance().addNewSentItem(newVideo);
-                sentItems = BotDb.getInstance().getSentItemsList();
-                System.out.println("New item added to sentItemsList itemId: " + videoId);
-                System.out.println("And also send to delay worker");
-                synchronized (sendAfterDelay = new SendAfterDelay(this, videoId)){
-                    sendAfterDelay.start();
+            System.out.println("Item with videoId = null received. Delivery to TG rejected");
+        } else if (sentItems.containsKey(videoId)) {
+            if (sentItems.get(videoId) == 0) {
+                if (isSendApproved(updated, published, 0)) {
+                    System.out.println("New video item received twice. Looks like an error.");
+                    System.out.println("This :" + videoId + " should be already added to postpone delivery");
+                } else {
+                    System.out.println("Item: " + videoId + " received");
+                    sendItemToBot(videoId);
+                    System.out.println("Item: " + videoId + " send to TG");
                 }
-                observer.newUpdateReceived("Новый объект полученн и отправлен в SendAfterDelay delay is set to 10m");
+            } else if (sentItems.get(videoId) == 1) {
+                System.out.println("Received item: " + videoId + " was send to TG already");
+                if (isSendApproved(updated, published, 1)){
+                    System.out.println("Item: " + videoId + " looks like rendered stream. Send to TG again");
+                    sendItemToBot(videoId);
+                } else {
+                    System.out.println("Item: " + videoId + " not sent to bot due to time between updating and publishing less than 1 day. Looks like a spam");
+                }
+            } else if (sentItems.get(videoId) == 2) {
+                System.out.println("Received item: " + videoId + " send to TG twice already. Not sent to TG now.");
             }
+
         } else {
-            if (sentItems.containsKey(videoId)){
-                sendItemToBot(videoId);
-            }else {
-                BotDb.getInstance().addNewSentItem(newVideo);
-                sentItems = BotDb.getInstance().getSentItemsList();
-                sendItemToBot(videoId);
-            }
+            System.out.println("New video item received.");
+            BotDb.getInstance().addNewSentItem(newVideo);
+            System.out.println("Stored to DB");
+            sentItems = BotDb.getInstance().getSentItemsList();
+            new SendAfterDelay(this, videoId).start();
+            System.out.println("VideoId: " + videoId + " send to postpone delivery worker");
         }
     }
 
@@ -169,25 +175,26 @@ public class YouTubeListener extends NanoHTTPD {
         return timestamp;
     }
 
-    private boolean isVideoNew(String updated, String published) {
-        long minTimeInterval = 300000L;
-        System.out.println("min interval = " + minTimeInterval);
-        System.out.println((stringToDate(updated) - stringToDate(published)) + " difference between published updated");
-        return (stringToDate(updated) - stringToDate(published)) < minTimeInterval;
+    private boolean isSendApproved(String updatedS, String publishedS, int isSendStage) {
+
+        long updated = stringToDate(updatedS);
+        long published = stringToDate(publishedS);
+        long timeInterval1 = 300000L; //Checking new video, difference between publishing and update should be more than 5 min to approve
+        long timeInterval2 = 86400000L; //For checking video which already sent. Diff between publish and update should be more than 1 day to approve
+
+        if (isSendStage == 0 && (updated - published) > timeInterval1) {
+            return true;
+        } else return (isSendStage == 1 && (updated - published) > timeInterval2);
     }
 
-    public void sendItemToBot(String videoId){
+    public void sendItemToBot(String videoId) {
         String urlToPost = "https://www.youtube.com/watch?v=" + videoId + "&date=" + new Date().getTime();
-        System.out.println(sentItems.get(videoId));
-        if(sentItems.get(videoId) == 0){
-            System.out.println("New post is send to TG with id: " + videoId);
-            BotDb.getInstance().markAsSendById(videoId);
-            sentItems = BotDb.getInstance().getSentItemsList();
-            System.out.println("Video marked as send");
-            observer.newUpdateReceived(urlToPost);
-        } else {
-            System.out.println("videoId: " + videoId + " doesn't sent to TG due to it already send before");
-        }
+        System.out.println("New post is send to TG with id: " + videoId);
+        BotDb.getInstance().markAsSendById(videoId, (sentItems.get(videoId) + 1));
+        sentItems = BotDb.getInstance().getSentItemsList();
+        System.out.println("Video marked as send: " + (sentItems.get(videoId) + 1));
+        observer.newUpdateReceived(urlToPost);
     }
 }
+
 

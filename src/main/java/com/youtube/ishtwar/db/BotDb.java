@@ -158,13 +158,13 @@ public class BotDb {
         return alreadySentItems;
     }
 
-    public void markAsSendById (String videoId){
+    public void markAsSendById (String videoId, Integer isSent){
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(dbUrl, dbUser, dbPwd);
             PreparedStatement statement = connection.prepareStatement(
                     "UPDATE sentitems SET issent = 1 WHERE videoid = (?)");
-            statement.setString(1, videoId);
+            statement.setString(isSent, videoId);
             statement.executeUpdate();
 
         }catch (SQLException e){
