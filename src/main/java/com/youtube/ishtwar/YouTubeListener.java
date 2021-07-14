@@ -182,6 +182,7 @@ public class YouTubeListener extends NanoHTTPD {
         if(sentItems.get(videoId) == 0){
             System.out.println("New post is send to TG with id: " + videoId);
             BotDb.getInstance().markAsSendById(videoId);
+            sentItems = BotDb.getInstance().getSentItemsList();
             System.out.println("Video marked as send");
             observer.newUpdateReceived(urlToPost);
         } else {
